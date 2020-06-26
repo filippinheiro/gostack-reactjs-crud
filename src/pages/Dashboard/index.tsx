@@ -27,7 +27,9 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // TODO LOAD FOODS
+      const { data } = await api.get<IFoodPlate[]>('/foods');
+
+      setFoods(data);
     }
 
     loadFoods();
@@ -37,7 +39,12 @@ const Dashboard: React.FC = () => {
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
+      const { data: addedFood } = await api.post<IFoodPlate>('/foods', {
+        ...food,
+        available: true,
+      });
+
+      setFoods([...foods, addedFood]);
     } catch (err) {
       console.log(err);
     }
@@ -46,11 +53,27 @@ const Dashboard: React.FC = () => {
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
-    // TODO UPDATE A FOOD PLATE ON THE API
+    const { data: updatedFood } = await api.put<IFoodPlate>(
+      `/foods/${editingFood.id}`,
+      {
+        id: editingFood.id,
+        available: editingFood.available,
+        ...food,
+      },
+    );
+
+    const foodsArray = [...foods];
+    const itemIndex = foodsArray.findIndex(item => item.id === updatedFood.id);
+    foodsArray[itemIndex] = updatedFood;
+    setFoods([...foodsArray]);
   }
 
   async function handleDeleteFood(id: number): Promise<void> {
-    // TODO DELETE A FOOD PLATE FROM THE API
+    await api.delete(`/foods/${id}`);
+
+    const newFoodState = foods.filter(food => food.id !== id);
+
+    setFoods([...newFoodState]);
   }
 
   function toggleModal(): void {
@@ -62,7 +85,7 @@ const Dashboard: React.FC = () => {
   }
 
   function handleEditFood(food: IFoodPlate): void {
-    // TODO SET THE CURRENT EDITING FOOD ID IN THE STATE
+    setEditingFood(food);
   }
 
   return (
@@ -86,6 +109,7 @@ const Dashboard: React.FC = () => {
             <Food
               key={food.id}
               food={food}
+              openModal={toggleEditModal}
               handleDelete={handleDeleteFood}
               handleEditFood={handleEditFood}
             />
